@@ -30,14 +30,3 @@ jobs:
           EXIT_WHEN_FAIL: ${{ vars.EXIT_WHEN_FAIL }}
         run: |
           python src/main.py
-          
-  # 这个是为你的主要任务保驾护航的“续期”任务
-  keepalive-job:
-    name: alive
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write      # 必须有这个权限才能触发操作
-      contents: write     # 必须有这个权限才能提交代码（如果需要使用 commit 模式）
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gautamkrishnar/keepalive-workflow@v2  # 使用公开的保持活跃组件
