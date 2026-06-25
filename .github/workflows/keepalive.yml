@@ -1,0 +1,47 @@
+name: 仓库保持活跃
+
+on:
+  schedule:
+    # 每月1日凌晨3点运行
+    - cron: "0 3 1 * *"
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  keepalive:
+    name: 执行空提交保持仓库活跃
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        
+      - name: 配置Git用户信息
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+      - name: 检查是否需要保持活跃
+        id: check
+        run: |
+          LAST_COMMIT=$(git log -1 --format=%ct)
+          CURRENT=$(date +%s)
+          DAYS_AGO=$(( (CURRENT - LAST_COMMIT) / 86400 ))
+          echo "最近一次提交距今: $DAYS_AGO 天"
+          if [ $DAYS_AGO -ge 50 ]; then
+            echo "need_commit=true" >> $GITHUB_OUTPUT
+          else
+            echo "need_commit=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: 创建空提交并推送
+        if: steps.check.outputs.need_commit == 'true'
+        run: |
+          git commit --allow-empty -m "🤖 自动保持仓库活跃 [skip ci]"
+          git push
+          
+      - name: 无需操作
+        if: steps.check.outputs.need_commit == 'false'
+        run: |
+          echo "仓库最近活跃，无需续期"
